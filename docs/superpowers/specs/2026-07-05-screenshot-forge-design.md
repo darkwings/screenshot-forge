@@ -88,6 +88,15 @@ Preview updates are debounced — only fire when all three selections and a scre
 - Frontend shows inline error message below preview area
 - No transparent-region found → 500 with descriptive error (signals corrupt/unexpected asset)
 
+## README
+
+`README.md` in root. Spiega:
+
+1. **Download assets da Apple** — URL ufficiale Apple Design Resources, sezione "iPhone Bezel", formato da scaricare (PNG)
+2. **Struttura cartelle attesa** — dove salvare i file: `iOS Assets/Bezel iPhone/{Model}/{Model} - {Color} - {Orientation}.png`
+3. **Come avviare** — `pip install -r requirements.txt` → `python app.py` → apri browser su `http://localhost:5000`
+4. **Requisiti** — Python 3.9+
+
 ## Out of Scope
 
 - No authentication (personal tool, local use)
