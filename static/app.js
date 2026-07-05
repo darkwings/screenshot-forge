@@ -38,6 +38,7 @@ fileInput.addEventListener('change', () => {
 
 function handleFile(file) {
   currentFile = file;
+  uploadZone.querySelector('p').textContent = file.name;
   maybeComposite();
 }
 

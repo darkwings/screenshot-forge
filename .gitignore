@@ -6,3 +6,4 @@ env/
 *.egg-info/
 .DS_Store
 .playwright-mcp/
+iOS Assets/
