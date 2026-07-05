@@ -63,11 +63,18 @@ def find_screen_rect(frame_img: Image.Image) -> tuple[int, int, int, int]:
     right_opaque = np.where(center_row[cx + 1:] >= 50)[0]
     cmax = cx + int(right_opaque[0]) if len(right_opaque) > 0 else img_w - 1
 
-    center_col = alpha[:, cx]
-    above_opaque = np.where(center_col[:cy] >= 50)[0]
-    rmin = int(above_opaque[-1]) + 1 if len(above_opaque) > 0 else 0
-    below_opaque = np.where(center_col[cy + 1:] >= 50)[0]
-    rmax = cy + int(below_opaque[0]) if len(below_opaque) > 0 else img_h - 1
+    # For vertical extent, scan the full screen band [cmin:cmax].
+    # Using only the center column misses the Dynamic Island hole, which is a
+    # separate transparent cutout above the main screen area in Apple's frames.
+    screen_band = alpha[:, cmin:cmax + 1]
+    band_w = cmax - cmin + 1
+    pixels_per_row = np.sum(screen_band < 50, axis=1)
+    # Require at least 2% of screen width to be transparent — filters corner bleed.
+    valid_rows = np.where(pixels_per_row >= max(1, band_w * 0.02))[0]
+    if len(valid_rows) == 0:
+        raise ValueError("No transparent region found in frame — cannot locate screen area")
+    rmin = int(valid_rows[0])
+    rmax = int(valid_rows[-1])
 
     return cmin, rmin, cmax - cmin + 1, rmax - rmin + 1
 
