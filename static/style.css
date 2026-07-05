@@ -1,0 +1,105 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f5f5f7;
+  color: #1d1d1f;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+  gap: 2rem;
+}
+
+h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.control-group { display: flex; flex-direction: column; gap: 0.3rem; }
+
+label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6e6e73; }
+
+select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fff;
+  min-width: 160px;
+  cursor: pointer;
+}
+
+select:disabled { opacity: 0.4; cursor: not-allowed; }
+
+#upload-zone {
+  width: 100%;
+  max-width: 420px;
+  border: 2px dashed #d2d2d7;
+  border-radius: 16px;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: #fff;
+}
+
+#upload-zone.drag-over { border-color: #0071e3; background: #f0f6ff; }
+#upload-zone p { color: #6e6e73; font-size: 0.9rem; margin-top: 0.5rem; }
+
+#preview-area {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+#preview {
+  max-width: 100%;
+  max-height: 520px;
+  display: none;
+  border-radius: 4px;
+  /* checkerboard background to show transparency */
+  background-image:
+    linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+}
+
+#download {
+  display: none;
+  padding: 0.6rem 1.5rem;
+  background: #0071e3;
+  color: #fff;
+  border: none;
+  border-radius: 980px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#download:hover { background: #0077ed; }
+
+#error-msg {
+  color: #ff3b30;
+  font-size: 0.875rem;
+  min-height: 1.2em;
+}
+
+#spinner {
+  display: none;
+  font-size: 0.875rem;
+  color: #6e6e73;
+}

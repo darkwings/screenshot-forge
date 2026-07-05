@@ -1,2 +1,46 @@
 <!doctype html>
-<html><body><h1>Screenshot Forge</h1></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Screenshot Forge</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <h1>Screenshot Forge</h1>
+
+  <div id="upload-zone">
+    <input type="file" id="file-input" accept="image/png,image/jpeg" hidden />
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.5">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <p>Drop screenshot here or click to browse</p>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <label for="sel-model">Model</label>
+      <select id="sel-model"><option value="">— select —</option></select>
+    </div>
+    <div class="control-group">
+      <label for="sel-color">Color</label>
+      <select id="sel-color" disabled><option value="">— select —</option></select>
+    </div>
+    <div class="control-group">
+      <label for="sel-orientation">Orientation</label>
+      <select id="sel-orientation" disabled><option value="">— select —</option></select>
+    </div>
+  </div>
+
+  <div id="preview-area">
+    <span id="spinner">Compositing…</span>
+    <span id="error-msg"></span>
+    <img id="preview" alt="Preview" />
+    <button id="download">Download PNG</button>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
