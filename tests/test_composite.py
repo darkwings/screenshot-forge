@@ -1,7 +1,8 @@
+import io
 import os
 import pytest
 from PIL import Image
-from composite import list_devices, find_screen_rect
+from composite import list_devices, find_screen_rect, crop_to_fit, composite_screenshot
 
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "..", "iOS Assets", "Bezel iPhone")
 PORTRAIT_FRAME = os.path.join(
@@ -61,3 +62,58 @@ def test_find_screen_rect_screen_smaller_than_frame():
     x, y, w, h = find_screen_rect(frame)
     assert w < frame.width
     assert h < frame.height
+
+
+def _make_png(w: int = 400, h: int = 800, color=(100, 149, 237, 255)) -> bytes:
+    img = Image.new("RGBA", (w, h), color)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def test_crop_to_fit_returns_exact_size():
+    img = Image.new("RGBA", (100, 200), (255, 0, 0, 255))
+    result = crop_to_fit(img, 50, 80)
+    assert result.size == (50, 80)
+
+
+def test_crop_to_fit_upscale():
+    img = Image.new("RGBA", (50, 100), (0, 255, 0, 255))
+    result = crop_to_fit(img, 200, 400)
+    assert result.size == (200, 400)
+
+
+def test_crop_to_fit_landscape_to_portrait():
+    img = Image.new("RGBA", (400, 200), (0, 0, 255, 255))
+    result = crop_to_fit(img, 100, 300)
+    assert result.size == (100, 300)
+
+
+def test_composite_screenshot_returns_png_rgba():
+    result = composite_screenshot(PORTRAIT_FRAME, _make_png())
+    out = Image.open(io.BytesIO(result))
+    assert out.format == "PNG"
+    assert out.mode == "RGBA"
+
+
+def test_composite_screenshot_has_transparent_background():
+    result = composite_screenshot(PORTRAIT_FRAME, _make_png())
+    out = Image.open(io.BytesIO(result)).convert("RGBA")
+    # top-left corner is outside any device bezel — must be transparent
+    assert out.getpixel((0, 0))[3] == 0, "top-left pixel must be transparent"
+
+
+def test_composite_screenshot_output_matches_frame_size():
+    frame = Image.open(PORTRAIT_FRAME)
+    result = composite_screenshot(PORTRAIT_FRAME, _make_png())
+    out = Image.open(io.BytesIO(result))
+    assert out.size == frame.size
+
+
+def test_composite_screenshot_landscape_frame():
+    # Verify composite works with landscape frames
+    result = composite_screenshot(LANDSCAPE_FRAME, _make_png())
+    out = Image.open(io.BytesIO(result))
+    frame = Image.open(LANDSCAPE_FRAME)
+    assert out.size == frame.size
+    assert out.mode == "RGBA"

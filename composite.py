@@ -72,8 +72,48 @@ def find_screen_rect(frame_img: Image.Image) -> tuple[int, int, int, int]:
 
 
 def crop_to_fit(img: Image.Image, target_w: int, target_h: int) -> Image.Image:
-    raise NotImplementedError
+    """
+    Resize and crop image to fit exact target dimensions via center-crop.
+
+    Scale image such that at least one dimension matches the target, then
+    center-crop to return exact (target_w, target_h) image.
+
+    Args:
+        img: Input image
+        target_w: Target width
+        target_h: Target height
+
+    Returns:
+        Resized and cropped RGBA image with size (target_w, target_h)
+    """
+    src_w, src_h = img.size
+    scale = max(target_w / src_w, target_h / src_h)
+    new_w = int(src_w * scale)
+    new_h = int(src_h * scale)
+    img = img.resize((new_w, new_h), Image.LANCZOS)
+    left = (new_w - target_w) // 2
+    top = (new_h - target_h) // 2
+    return img.crop((left, top, left + target_w, top + target_h))
 
 
 def composite_screenshot(frame_path: str, screenshot_bytes: bytes) -> bytes:
-    raise NotImplementedError
+    """
+    Composite a screenshot into an iOS device frame.
+
+    Args:
+        frame_path: Path to RGBA device frame PNG
+        screenshot_bytes: Screenshot image bytes (PNG)
+
+    Returns:
+        PNG bytes with screenshot composited into frame, RGBA, transparent background
+    """
+    frame = Image.open(frame_path).convert("RGBA")
+    x, y, w, h = find_screen_rect(frame)
+    screenshot = Image.open(io.BytesIO(screenshot_bytes)).convert("RGBA")
+    screenshot = crop_to_fit(screenshot, w, h)
+    canvas = Image.new("RGBA", frame.size, (0, 0, 0, 0))
+    canvas.paste(screenshot, (x, y))
+    result = Image.alpha_composite(canvas, frame)
+    output = io.BytesIO()
+    result.save(output, format="PNG")
+    return output.getvalue()
