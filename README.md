@@ -36,11 +36,12 @@ The app auto-discovers any PNG placed here — no config needed.
 ## Requirements
 
 - Python 3.9 or later
-- pip
 
 ## Setup
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
