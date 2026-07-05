@@ -59,5 +59,5 @@ def test_find_screen_rect_landscape_is_wide():
 def test_find_screen_rect_screen_smaller_than_frame():
     frame = Image.open(PORTRAIT_FRAME).convert("RGBA")
     x, y, w, h = find_screen_rect(frame)
-    assert w <= frame.width
-    assert h <= frame.height
+    assert w < frame.width
+    assert h < frame.height
