@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import math
 import os
 
 import numpy as np
@@ -88,8 +89,8 @@ def crop_to_fit(img: Image.Image, target_w: int, target_h: int) -> Image.Image:
     """
     src_w, src_h = img.size
     scale = max(target_w / src_w, target_h / src_h)
-    new_w = int(src_w * scale)
-    new_h = int(src_h * scale)
+    new_w = math.ceil(src_w * scale)
+    new_h = math.ceil(src_h * scale)
     img = img.resize((new_w, new_h), Image.LANCZOS)
     left = (new_w - target_w) // 2
     top = (new_h - target_h) // 2

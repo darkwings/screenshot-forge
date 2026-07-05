@@ -29,6 +29,7 @@ def test_list_devices_structure():
                 assert o in ("Portrait", "Landscape"), f"unexpected orientation: {o}"
 
 
+@pytest.mark.skipif(not os.path.exists(PORTRAIT_FRAME), reason="real assets not installed")
 def test_list_devices_known_model():
     result = list_devices(ASSETS_DIR)
     assert "iPhone 17 Pro" in result
@@ -36,6 +37,7 @@ def test_list_devices_known_model():
     assert "Portrait" in result["iPhone 17 Pro"]["Deep Blue"]
 
 
+@pytest.mark.skipif(not os.path.exists(PORTRAIT_FRAME), reason="real assets not installed")
 def test_find_screen_rect_portrait_within_bounds():
     frame = Image.open(PORTRAIT_FRAME).convert("RGBA")
     x, y, w, h = find_screen_rect(frame)
@@ -45,18 +47,21 @@ def test_find_screen_rect_portrait_within_bounds():
     assert y + h <= frame.height
 
 
+@pytest.mark.skipif(not os.path.exists(PORTRAIT_FRAME), reason="real assets not installed")
 def test_find_screen_rect_portrait_is_tall():
     frame = Image.open(PORTRAIT_FRAME).convert("RGBA")
     _, _, w, h = find_screen_rect(frame)
     assert h > w, "portrait screen rect must be taller than wide"
 
 
+@pytest.mark.skipif(not os.path.exists(LANDSCAPE_FRAME), reason="real assets not installed")
 def test_find_screen_rect_landscape_is_wide():
     frame = Image.open(LANDSCAPE_FRAME).convert("RGBA")
     _, _, w, h = find_screen_rect(frame)
     assert w > h, "landscape screen rect must be wider than tall"
 
 
+@pytest.mark.skipif(not os.path.exists(PORTRAIT_FRAME), reason="real assets not installed")
 def test_find_screen_rect_screen_smaller_than_frame():
     frame = Image.open(PORTRAIT_FRAME).convert("RGBA")
     x, y, w, h = find_screen_rect(frame)
@@ -89,6 +94,7 @@ def test_crop_to_fit_landscape_to_portrait():
     assert result.size == (100, 300)
 
 
+@pytest.mark.skipif(not os.path.exists(PORTRAIT_FRAME), reason="real assets not installed")
 def test_composite_screenshot_returns_png_rgba():
     result = composite_screenshot(PORTRAIT_FRAME, _make_png())
     out = Image.open(io.BytesIO(result))
@@ -96,6 +102,7 @@ def test_composite_screenshot_returns_png_rgba():
     assert out.mode == "RGBA"
 
 
+@pytest.mark.skipif(not os.path.exists(PORTRAIT_FRAME), reason="real assets not installed")
 def test_composite_screenshot_has_transparent_background():
     result = composite_screenshot(PORTRAIT_FRAME, _make_png())
     out = Image.open(io.BytesIO(result)).convert("RGBA")
@@ -103,6 +110,7 @@ def test_composite_screenshot_has_transparent_background():
     assert out.getpixel((0, 0))[3] == 0, "top-left pixel must be transparent"
 
 
+@pytest.mark.skipif(not os.path.exists(PORTRAIT_FRAME), reason="real assets not installed")
 def test_composite_screenshot_output_matches_frame_size():
     frame = Image.open(PORTRAIT_FRAME)
     result = composite_screenshot(PORTRAIT_FRAME, _make_png())
@@ -110,6 +118,7 @@ def test_composite_screenshot_output_matches_frame_size():
     assert out.size == frame.size
 
 
+@pytest.mark.skipif(not os.path.exists(LANDSCAPE_FRAME), reason="real assets not installed")
 def test_composite_screenshot_landscape_frame():
     # Verify composite works with landscape frames
     result = composite_screenshot(LANDSCAPE_FRAME, _make_png())

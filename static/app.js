@@ -44,9 +44,14 @@ function handleFile(file) {
 // ── Device selection ─────────────────────────────────────────────────────────
 
 async function loadDevices() {
-  const resp = await fetch('/api/devices');
-  devicesData = await resp.json();
-  populateSelect(selModel, Object.keys(devicesData).sort(), true);
+  try {
+    const resp = await fetch('/api/devices');
+    if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
+    devicesData = await resp.json();
+    populateSelect(selModel, Object.keys(devicesData).sort(), true);
+  } catch (err) {
+    errorMsg.textContent = `Failed to load devices: ${err.message}`;
+  }
 }
 
 function populateSelect(sel, options, enabled) {
