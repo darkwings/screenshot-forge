@@ -65,9 +65,8 @@ def test_find_screen_rect_landscape_is_wide():
 def test_find_screen_rect_screen_smaller_than_frame():
     frame = Image.open(PORTRAIT_FRAME).convert("RGBA")
     x, y, w, h = find_screen_rect(frame)
-    # Side bezel always exists; top/bottom bezel may be 0 on edge-to-edge designs.
     assert w < frame.width
-    assert h <= frame.height
+    assert h < frame.height
 
 
 def _make_png(w: int = 400, h: int = 800, color=(100, 149, 237, 255)) -> bytes:

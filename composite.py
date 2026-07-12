@@ -63,18 +63,39 @@ def find_screen_rect(frame_img: Image.Image) -> tuple[int, int, int, int]:
     right_opaque = np.where(center_row[cx + 1:] >= 50)[0]
     cmax = cx + int(right_opaque[0]) if len(right_opaque) > 0 else img_w - 1
 
-    # For vertical extent, scan the full screen band [cmin:cmax].
-    # Using only the center column misses the Dynamic Island hole, which is a
-    # separate transparent cutout above the main screen area in Apple's frames.
-    screen_band = alpha[:, cmin:cmax + 1]
-    band_w = cmax - cmin + 1
-    pixels_per_row = np.sum(screen_band < 50, axis=1)
-    # Require at least 2% of screen width to be transparent — filters corner bleed.
-    valid_rows = np.where(pixels_per_row >= max(1, band_w * 0.02))[0]
-    if len(valid_rows) == 0:
+    # The screen area may include a Dynamic Island hole that is disconnected
+    # from the main screen rectangle by a thin opaque strip, so a simple
+    # contiguous scan from the center misses it. Frame PNGs can also have
+    # transparent padding around the whole device (drop-shadow margin), which
+    # must NOT be mistaken for screen area.
+    #
+    # Distinguish the two by connectivity to the image border: padding always
+    # touches the canvas edge, while the screen/Dynamic Island holes are fully
+    # enclosed by the opaque device body. Flood-fill transparency from the
+    # border (via iterative dilation) to find the padding, then take the
+    # bounding box of whatever transparent pixels remain.
+    transparent = alpha < 50
+    outside = np.zeros_like(transparent)
+    outside[0, :] = transparent[0, :]
+    outside[-1, :] = transparent[-1, :]
+    outside[:, 0] = transparent[:, 0]
+    outside[:, -1] = transparent[:, -1]
+    while True:
+        grown = outside.copy()
+        grown[1:, :] |= outside[:-1, :]
+        grown[:-1, :] |= outside[1:, :]
+        grown[:, 1:] |= outside[:, :-1]
+        grown[:, :-1] |= outside[:, 1:]
+        grown &= transparent
+        if np.array_equal(grown, outside):
+            break
+        outside = grown
+
+    interior = transparent & ~outside
+    rows = np.where(interior.any(axis=1))[0]
+    if len(rows) == 0:
         raise ValueError("No transparent region found in frame — cannot locate screen area")
-    rmin = int(valid_rows[0])
-    rmax = int(valid_rows[-1])
+    rmin, rmax = int(rows[0]), int(rows[-1])
 
     return cmin, rmin, cmax - cmin + 1, rmax - rmin + 1
 
