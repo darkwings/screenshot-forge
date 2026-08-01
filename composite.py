@@ -32,6 +32,46 @@ def list_devices(assets_dir: str) -> dict:
     return result
 
 
+def _interior_mask(frame_img: Image.Image) -> np.ndarray:
+    """
+    Find the true screen shape (transparent area enclosed by the device body)
+    in an iOS device frame, as a boolean pixel mask.
+
+    The screen area may include a Dynamic Island hole that is disconnected
+    from the main screen rectangle by a thin opaque strip, and the screen
+    itself has rounded corners — so it is not a plain rectangle. Frame PNGs
+    can also have transparent padding around the whole device (drop-shadow
+    margin), which must NOT be mistaken for screen area.
+
+    Distinguish the two by connectivity to the image border: padding always
+    touches the canvas edge, while the screen/Dynamic Island holes are fully
+    enclosed by the opaque device body. Flood-fill transparency from the
+    border (via iterative dilation) to find the padding; whatever transparent
+    pixels remain make up the true screen shape.
+    """
+    arr = np.array(frame_img)
+    alpha = arr[:, :, 3]
+
+    transparent = alpha < 50
+    outside = np.zeros_like(transparent)
+    outside[0, :] = transparent[0, :]
+    outside[-1, :] = transparent[-1, :]
+    outside[:, 0] = transparent[:, 0]
+    outside[:, -1] = transparent[:, -1]
+    while True:
+        grown = outside.copy()
+        grown[1:, :] |= outside[:-1, :]
+        grown[:-1, :] |= outside[1:, :]
+        grown[:, 1:] |= outside[:, :-1]
+        grown[:, :-1] |= outside[:, 1:]
+        grown &= transparent
+        if np.array_equal(grown, outside):
+            break
+        outside = grown
+
+    return transparent & ~outside
+
+
 def find_screen_rect(frame_img: Image.Image) -> tuple[int, int, int, int]:
     """
     Find the screen region (transparent area) in an iOS device frame.
@@ -55,47 +95,13 @@ def find_screen_rect(frame_img: Image.Image) -> tuple[int, int, int, int]:
     if alpha[cy, cx] >= 50:
         raise ValueError("No transparent region found in frame — cannot locate screen area")
 
-    # Find the contiguous transparent (screen) region by scanning inward from center.
-    # This avoids including transparent corner pixels that lie outside the device bezel.
-    center_row = alpha[cy, :]
-    left_opaque = np.where(center_row[:cx] >= 50)[0]
-    cmin = int(left_opaque[-1]) + 1 if len(left_opaque) > 0 else 0
-    right_opaque = np.where(center_row[cx + 1:] >= 50)[0]
-    cmax = cx + int(right_opaque[0]) if len(right_opaque) > 0 else img_w - 1
-
-    # The screen area may include a Dynamic Island hole that is disconnected
-    # from the main screen rectangle by a thin opaque strip, so a simple
-    # contiguous scan from the center misses it. Frame PNGs can also have
-    # transparent padding around the whole device (drop-shadow margin), which
-    # must NOT be mistaken for screen area.
-    #
-    # Distinguish the two by connectivity to the image border: padding always
-    # touches the canvas edge, while the screen/Dynamic Island holes are fully
-    # enclosed by the opaque device body. Flood-fill transparency from the
-    # border (via iterative dilation) to find the padding, then take the
-    # bounding box of whatever transparent pixels remain.
-    transparent = alpha < 50
-    outside = np.zeros_like(transparent)
-    outside[0, :] = transparent[0, :]
-    outside[-1, :] = transparent[-1, :]
-    outside[:, 0] = transparent[:, 0]
-    outside[:, -1] = transparent[:, -1]
-    while True:
-        grown = outside.copy()
-        grown[1:, :] |= outside[:-1, :]
-        grown[:-1, :] |= outside[1:, :]
-        grown[:, 1:] |= outside[:, :-1]
-        grown[:, :-1] |= outside[:, 1:]
-        grown &= transparent
-        if np.array_equal(grown, outside):
-            break
-        outside = grown
-
-    interior = transparent & ~outside
+    interior = _interior_mask(frame_img)
     rows = np.where(interior.any(axis=1))[0]
+    cols = np.where(interior.any(axis=0))[0]
     if len(rows) == 0:
         raise ValueError("No transparent region found in frame — cannot locate screen area")
     rmin, rmax = int(rows[0]), int(rows[-1])
+    cmin, cmax = int(cols[0]), int(cols[-1])
 
     return cmin, rmin, cmax - cmin + 1, rmax - rmin + 1
 
@@ -142,6 +148,16 @@ def composite_screenshot(frame_path: str, screenshot_bytes: bytes) -> bytes:
     screenshot = crop_to_fit(screenshot, w, h)
     canvas = Image.new("RGBA", frame.size, (0, 0, 0, 0))
     canvas.paste(screenshot, (x, y))
+
+    # The screen isn't a plain rectangle (rounded corners, Dynamic Island
+    # cutout), so clip the pasted screenshot to the true screen shape —
+    # otherwise it bleeds into the transparent padding around the device
+    # near the rounded corners.
+    mask = _interior_mask(frame)
+    canvas_arr = np.array(canvas)
+    canvas_arr[~mask, 3] = 0
+    canvas = Image.fromarray(canvas_arr, "RGBA")
+
     result = Image.alpha_composite(canvas, frame)
     output = io.BytesIO()
     result.save(output, format="PNG")
